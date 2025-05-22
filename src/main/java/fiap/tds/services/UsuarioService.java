@@ -12,11 +12,11 @@ public class UsuarioService {
 
     private final UsuarioRepository repository = new UsuarioRepository();
 
-    public void cadastrar(Usuario usuario) {
+    public Usuario cadastrar(Usuario usuario) {
         usuario.setDataCadastro(new Date());
         usuario.setUltimoAcesso(new Date());
-
         repository.insert(usuario);
+        return usuario;
     }
 
     public List<UsuarioDto> listar() {

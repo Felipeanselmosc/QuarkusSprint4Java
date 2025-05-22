@@ -51,7 +51,6 @@ public class UsuarioResource {
         }
     }
 
-
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -78,9 +77,17 @@ public class UsuarioResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response cadastrarUsuario(Usuario usuario) {
         try {
-            service.cadastrar(usuario);
+            Usuario usuarioSalvo = service.cadastrar(usuario);
+            UsuarioDto dto = new UsuarioDto(
+                    usuarioSalvo.getId(),
+                    usuarioSalvo.getNome(),
+                    usuarioSalvo.getEmail(),
+                    usuarioSalvo.getPreferenciasAcessibilidade(),
+                    usuarioSalvo.getDataCadastro(),
+                    usuarioSalvo.getUltimoAcesso()
+            );
             return Response.status(Response.Status.CREATED)
-                    .entity("Usuário cadastrado com sucesso")
+                    .entity(dto)
                     .type(MediaType.APPLICATION_JSON)
                     .build();
         } catch (Exception e) {
