@@ -30,17 +30,18 @@ public class UsuarioResource {
                     .sorted(Comparator.comparing(UsuarioDto::nome))
                     .collect(Collectors.toList());
 
-            int start = (page - 1) * pageSize;
-            int end = Math.min(usuarios.size(), start + pageSize);
-
-            if (start >= usuarios.size()) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("Página fora do intervalo")
-                        .type(MediaType.APPLICATION_JSON)
-                        .build();
+            if (usuarios.isEmpty()) {
+                return Response.ok(usuarios, MediaType.APPLICATION_JSON).build();
             }
 
+            int start = (page - 1) * pageSize;
+            if (start >= usuarios.size()) {
+                return Response.ok(List.of(), MediaType.APPLICATION_JSON).build();
+            }
+
+            int end = Math.min(usuarios.size(), start + pageSize);
             List<UsuarioDto> paginado = usuarios.subList(start, end);
+
             return Response.ok(paginado, MediaType.APPLICATION_JSON).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -49,6 +50,7 @@ public class UsuarioResource {
                     .build();
         }
     }
+
 
     @GET
     @Path("/{id}")

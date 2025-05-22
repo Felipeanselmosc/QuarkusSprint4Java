@@ -1,5 +1,6 @@
 package fiap.tds.repositories;
 
+import fiap.tds.entities.Usuario;
 import fiap.tds.infrastructure.DatabaseConfig;
 
 import java.sql.*;
@@ -7,16 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UsuarioRepository {
-    private DatabaseConfig dbConfig;
 
-
-    public UsuarioRepository() {
-        this.dbConfig = new DatabaseConfig();
-    }
-
-
-    public List<fiap.tds.entities.Usuario> findAll() {
-        List<fiap.tds.entities.Usuario> usuarios = new ArrayList<>();
+    public List<Usuario> findAll() {
+        List<Usuario> usuarios = new ArrayList<>();
         String sql = "SELECT * FROM usuario";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -24,11 +18,14 @@ public class UsuarioRepository {
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                fiap.tds.entities.Usuario usuario = new fiap.tds.entities.Usuario();
+                Usuario usuario = new Usuario();
                 usuario.setId(rs.getInt("id"));
                 usuario.setNome(rs.getString("nome"));
                 usuario.setEmail(rs.getString("email"));
                 usuario.setSenha(rs.getString("senha"));
+                usuario.setPreferenciasAcessibilidade(rs.getString("preferencias_acessibilidade"));
+                usuario.setDataCadastro(rs.getDate("data_cadastro"));
+                usuario.setUltimoAcesso(rs.getDate("ultimo_acesso"));
 
                 usuarios.add(usuario);
             }
@@ -39,29 +36,35 @@ public class UsuarioRepository {
         return usuarios;
     }
 
-    public void insert(fiap.tds.entities.Usuario usuario) {
+    public void insert(Usuario usuario) {
         String sql = "INSERT INTO usuario (nome, email, senha, preferencias_acessibilidade, data_cadastro, ultimo_acesso) " +
                 "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             stmt.setString(1, usuario.getNome());
             stmt.setString(2, usuario.getEmail());
             stmt.setString(3, usuario.getSenha());
             stmt.setString(4, usuario.getPreferenciasAcessibilidade());
-
             stmt.setDate(5, new java.sql.Date(usuario.getDataCadastro().getTime()));
             stmt.setDate(6, new java.sql.Date(usuario.getUltimoAcesso().getTime()));
 
             stmt.executeUpdate();
+
+            // Recupera o ID gerado
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    usuario.setId(generatedKeys.getInt(1));
+                }
+            }
 
         } catch (SQLException e) {
             System.err.println("Erro ao inserir usuário: " + e.getMessage());
         }
     }
 
-    public fiap.tds.entities.Usuario findById(Long id) {
+    public Usuario findById(Long id) {
         String sql = "SELECT * FROM usuario WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -71,11 +74,14 @@ public class UsuarioRepository {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    fiap.tds.entities.Usuario usuario = new fiap.tds.entities.Usuario();
+                    Usuario usuario = new Usuario();
                     usuario.setId(rs.getInt("id"));
                     usuario.setNome(rs.getString("nome"));
                     usuario.setEmail(rs.getString("email"));
                     usuario.setSenha(rs.getString("senha"));
+                    usuario.setPreferenciasAcessibilidade(rs.getString("preferencias_acessibilidade"));
+                    usuario.setDataCadastro(rs.getDate("data_cadastro"));
+                    usuario.setUltimoAcesso(rs.getDate("ultimo_acesso"));
 
                     return usuario;
                 }
@@ -87,8 +93,8 @@ public class UsuarioRepository {
         return null;
     }
 
-    public boolean update(fiap.tds.entities.Usuario usuario) {
-        String sql = "UPDATE usuario SET nome = ?, email = ?, senha = ? WHERE id = ?";
+    public boolean update(Usuario usuario) {
+        String sql = "UPDATE usuario SET nome = ?, email = ?, senha = ?, preferencias_acessibilidade = ?, ultimo_acesso = ? WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -96,7 +102,9 @@ public class UsuarioRepository {
             stmt.setString(1, usuario.getNome());
             stmt.setString(2, usuario.getEmail());
             stmt.setString(3, usuario.getSenha());
-            stmt.setInt(4, usuario.getId());
+            stmt.setString(4, usuario.getPreferenciasAcessibilidade());
+            stmt.setDate(5, new java.sql.Date(usuario.getUltimoAcesso().getTime()));
+            stmt.setInt(6, usuario.getId());
 
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
@@ -105,6 +113,4 @@ public class UsuarioRepository {
             return false;
         }
     }
-
 }
-
