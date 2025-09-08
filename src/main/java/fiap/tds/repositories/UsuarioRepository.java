@@ -11,7 +11,7 @@ public class UsuarioRepository {
 
     public List<Usuario> findAll() {
         List<Usuario> usuarios = new ArrayList<>();
-        String sql = "SELECT * FROM usuario";
+        String sql = "SELECT * FROM spr_usuario";
 
         try (Connection conn = DatabaseConfig.getConnection();
              Statement stmt = conn.createStatement();
@@ -24,8 +24,8 @@ public class UsuarioRepository {
                 usuario.setEmail(rs.getString("email"));
                 usuario.setSenha(rs.getString("senha"));
                 usuario.setPreferenciasAcessibilidade(rs.getString("preferencias_acessibilidade"));
-                usuario.setDataCadastro(rs.getDate("data_cadastro"));
-                usuario.setUltimoAcesso(rs.getDate("ultimo_acesso"));
+                usuario.setDataCadastro(rs.getTimestamp("data_cadastro")); // usa Timestamp
+                usuario.setUltimoAcesso(rs.getTimestamp("ultimo_acesso")); // pode ser null
 
                 usuarios.add(usuario);
             }
@@ -37,8 +37,9 @@ public class UsuarioRepository {
     }
 
     public void insert(Usuario usuario) {
-        String sql = "INSERT INTO usuario (nome, email, senha, preferencias_acessibilidade, data_cadastro, ultimo_acesso) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO spr_usuario " +
+                     "(nome, email, senha, preferencias_acessibilidade, data_cadastro, ultimo_acesso) " +
+                     "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -47,8 +48,20 @@ public class UsuarioRepository {
             stmt.setString(2, usuario.getEmail());
             stmt.setString(3, usuario.getSenha());
             stmt.setString(4, usuario.getPreferenciasAcessibilidade());
-            stmt.setDate(5, new java.sql.Date(usuario.getDataCadastro().getTime()));
-            stmt.setDate(6, new java.sql.Date(usuario.getUltimoAcesso().getTime()));
+
+            // dataCadastro obrigatório → usa Timestamp
+            if (usuario.getDataCadastro() != null) {
+                stmt.setTimestamp(5, new java.sql.Timestamp(usuario.getDataCadastro().getTime()));
+            } else {
+                stmt.setTimestamp(5, new java.sql.Timestamp(System.currentTimeMillis()));
+            }
+
+            // ultimoAcesso opcional → pode ser null
+            if (usuario.getUltimoAcesso() != null) {
+                stmt.setTimestamp(6, new java.sql.Timestamp(usuario.getUltimoAcesso().getTime()));
+            } else {
+                stmt.setNull(6, Types.TIMESTAMP);
+            }
 
             stmt.executeUpdate();
 
@@ -65,7 +78,7 @@ public class UsuarioRepository {
     }
 
     public Usuario findById(Long id) {
-        String sql = "SELECT * FROM usuario WHERE id = ?";
+        String sql = "SELECT * FROM spr_usuario WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -80,9 +93,8 @@ public class UsuarioRepository {
                     usuario.setEmail(rs.getString("email"));
                     usuario.setSenha(rs.getString("senha"));
                     usuario.setPreferenciasAcessibilidade(rs.getString("preferencias_acessibilidade"));
-                    usuario.setDataCadastro(rs.getDate("data_cadastro"));
-                    usuario.setUltimoAcesso(rs.getDate("ultimo_acesso"));
-
+                    usuario.setDataCadastro(rs.getTimestamp("data_cadastro"));
+                    usuario.setUltimoAcesso(rs.getTimestamp("ultimo_acesso"));
                     return usuario;
                 }
             }
@@ -94,7 +106,9 @@ public class UsuarioRepository {
     }
 
     public boolean update(Usuario usuario) {
-        String sql = "UPDATE usuario SET nome = ?, email = ?, senha = ?, preferencias_acessibilidade = ?, ultimo_acesso = ? WHERE id = ?";
+        String sql = "UPDATE spr_usuario " +
+                     "SET nome = ?, email = ?, senha = ?, preferencias_acessibilidade = ?, ultimo_acesso = ? " +
+                     "WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -103,7 +117,13 @@ public class UsuarioRepository {
             stmt.setString(2, usuario.getEmail());
             stmt.setString(3, usuario.getSenha());
             stmt.setString(4, usuario.getPreferenciasAcessibilidade());
-            stmt.setDate(5, new java.sql.Date(usuario.getUltimoAcesso().getTime()));
+
+            if (usuario.getUltimoAcesso() != null) {
+                stmt.setTimestamp(5, new java.sql.Timestamp(usuario.getUltimoAcesso().getTime()));
+            } else {
+                stmt.setNull(5, Types.TIMESTAMP);
+            }
+
             stmt.setInt(6, usuario.getId());
 
             int rowsAffected = stmt.executeUpdate();

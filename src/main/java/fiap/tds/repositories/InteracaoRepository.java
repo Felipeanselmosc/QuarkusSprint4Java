@@ -10,7 +10,7 @@ import java.util.List;
 public class InteracaoRepository {
 
     public void salvar(Interacao interacao) {
-        String sql = "INSERT INTO interacao (usuario_id, mensagem_usuario, resposta_ia, data_hora) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO spr_interacao (usuario_id, mensagem_usuario, resposta_ia, data_hora) VALUES (?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -28,7 +28,7 @@ public class InteracaoRepository {
 
     public List<Interacao> buscarPorUsuario(int usuarioId) {
         List<Interacao> interacoes = new ArrayList<>();
-        String sql = "SELECT * FROM interacao WHERE usuario_id = ? ORDER BY data_hora DESC";
+        String sql = "SELECT * FROM spr_interacao WHERE usuario_id = ? ORDER BY data_hora DESC";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
